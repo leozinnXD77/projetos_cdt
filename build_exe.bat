@@ -9,7 +9,7 @@ pip install pyinstaller selenium pandas openpyxl
  
 echo.
 echo Gerando o .exe...
-pyinstaller --onefile --windowed --name AutomacaoPrecos projeto_automacao.py
+pyinstaller --onefile --windowed --collect-all selenium --name AutomacaoPrecos projeto_automacao.py
  
 echo.
 echo ===============================================
