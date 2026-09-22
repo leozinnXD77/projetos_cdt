@@ -8,7 +8,9 @@ from datetime import datetime
 import pandas as pd
  
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from tkinter import messagebox, filedialog
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
  
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -199,59 +201,68 @@ class AppAutomação:
     def __init__(self, root):
         self.root = root
         self.root.title("Sistema de Automação de Preços & Banco de Dados")
-        self.root.geometry("950x600")
-        self.root.config(bg="#f4f6f9")
+        self.root.geometry("980x620")
  
         init_db()
         self.criar_interface()
  
     def criar_interface(self):
-        # Título principal
-        lbl_titulo = tk.Label(
-            self.root, text="🤖 Automação Web & Histórico Local (SQLite)",
-            font=("Helvetica", 15, "bold"), bg="#f4f6f9", fg="#333"
+        # --- Cabeçalho (banner colorido) ---
+        frame_header = ttk.Frame(self.root, bootstyle="primary")
+        frame_header.pack(fill=tk.X)
+ 
+        lbl_titulo = ttk.Label(
+            frame_header, text="🛍️  Monitor de Produtos — Mercado Livre",
+            font=("Helvetica", 17, "bold"), bootstyle="inverse-primary",
+            padding=(15, 14)
         )
-        lbl_titulo.pack(pady=10)
+        lbl_titulo.pack(side=tk.LEFT)
  
-        # Painel de Busca
-        frame_busca = tk.Frame(self.root, bg="#f4f6f9")
-        frame_busca.pack(pady=5)
+        # --- Painel de Busca (dentro de um card com borda) ---
+        frame_busca_card = ttk.Frame(self.root, padding=15)
+        frame_busca_card.pack(fill=tk.X, padx=15, pady=(15, 5))
  
-        tk.Label(frame_busca, text="Produto:", font=("Arial", 11), bg="#f4f6f9").pack(side=tk.LEFT, padx=5)
+        frame_busca = ttk.Frame(frame_busca_card)
+        frame_busca.pack(fill=tk.X)
  
-        self.ent_busca = tk.Entry(frame_busca, font=("Arial", 11), width=30)
+        ttk.Label(frame_busca, text="Produto:", font=("Arial", 11)).pack(side=tk.LEFT, padx=(0, 5))
+ 
+        self.ent_busca = ttk.Entry(frame_busca, font=("Arial", 11), width=30)
         self.ent_busca.pack(side=tk.LEFT, padx=5)
         # CORRIGIDO: bind precisa de um evento nomeado, não uma string vazia.
         # "<Return>" faz a busca disparar quando o usuário aperta Enter.
         self.ent_busca.bind("<Return>", lambda e: self.iniciar_busca_thread())
  
-        tk.Label(frame_busca, text="Qtd. produtos:", font=("Arial", 11), bg="#f4f6f9").pack(side=tk.LEFT, padx=(15, 5))
+        ttk.Label(frame_busca, text="Qtd. produtos:", font=("Arial", 11)).pack(side=tk.LEFT, padx=(15, 5))
  
         # Spinbox limitado entre 1 e 120 (o site pode retornar menos que
         # o pedido, dependendo de quantos itens carregarem na página).
-        self.spin_quantidade = tk.Spinbox(frame_busca, from_=1, to=120, width=5, font=("Arial", 11))
+        self.spin_quantidade = ttk.Spinbox(frame_busca, from_=1, to=120, width=5, font=("Arial", 11), bootstyle="primary")
         self.spin_quantidade.delete(0, tk.END)
         self.spin_quantidade.insert(0, "10")
         self.spin_quantidade.pack(side=tk.LEFT, padx=5)
  
-        self.btn_buscar = tk.Button(
-            frame_busca, text="🔍 Nova Pesquisa", font=("Arial", 10, "bold"),
-            bg="#28a745", fg="white", padx=10, command=self.iniciar_busca_thread
+        self.btn_buscar = ttk.Button(
+            frame_busca, text="🔍 Nova Pesquisa", bootstyle="primary",
+            command=self.iniciar_busca_thread
         )
-        self.btn_buscar.pack(side=tk.LEFT, padx=5)
+        self.btn_buscar.pack(side=tk.LEFT, padx=(15, 0))
  
         # Status
-        self.lbl_status = tk.Label(self.root, text="Status: Pronto", font=("Arial", 10, "italic"), bg="#f4f6f9", fg="#555")
-        self.lbl_status.pack(pady=5)
+        self.lbl_status = ttk.Label(
+            frame_busca_card, text="Status: Pronto", font=("Arial", 10, "italic"),
+            bootstyle="secondary"
+        )
+        self.lbl_status.pack(anchor="w", pady=(8, 0))
  
-        # Tabela (Treeview)
-        frame_tabela = tk.Frame(self.root)
-        frame_tabela.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
+        # --- Tabela (Treeview) ---
+        frame_tabela = ttk.Frame(self.root, padding=(15, 5))
+        frame_tabela.pack(fill=tk.BOTH, expand=True)
         frame_tabela.grid_rowconfigure(0, weight=1)
         frame_tabela.grid_columnconfigure(0, weight=1)
  
         colunas = ("Data/Hora", "Termo", "Produto", "Preço (R$)", "Link")
-        self.tree = ttk.Treeview(frame_tabela, columns=colunas, show="headings", height=12)
+        self.tree = ttk.Treeview(frame_tabela, columns=colunas, show="headings", height=12, bootstyle="primary")
  
         self.tree.heading("Data/Hora", text="Data/Hora")
         self.tree.heading("Termo", text="Termo")
@@ -271,8 +282,8 @@ class AppAutomação:
         self.tree.column("Preço (R$)", width=100, anchor="center", stretch=False)
         self.tree.column("Link", width=420, stretch=False)
  
-        scrollbar_v = ttk.Scrollbar(frame_tabela, orient=tk.VERTICAL, command=self.tree.yview)
-        scrollbar_h = ttk.Scrollbar(frame_tabela, orient=tk.HORIZONTAL, command=self.tree.xview)
+        scrollbar_v = ttk.Scrollbar(frame_tabela, orient=tk.VERTICAL, command=self.tree.yview, bootstyle="round")
+        scrollbar_h = ttk.Scrollbar(frame_tabela, orient=tk.HORIZONTAL, command=self.tree.xview, bootstyle="round")
         self.tree.configure(yscroll=scrollbar_v.set, xscroll=scrollbar_h.set)
  
         self.tree.grid(row=0, column=0, sticky="nsew")
@@ -281,50 +292,47 @@ class AppAutomação:
  
         # Painel Inferior de Ações: dois grupos separados visualmente,
         # para deixar claro o que é "ver dados" e o que é "exportar dados".
-        frame_acoes = tk.Frame(self.root, bg="#f4f6f9")
-        frame_acoes.pack(pady=10)
+        frame_acoes = ttk.Frame(self.root, padding=(15, 5, 15, 15))
+        frame_acoes.pack(fill=tk.X)
  
         # --- Grupo 1: Histórico (ver/carregar dados já existentes) ---
-        frame_historico = tk.LabelFrame(
-            frame_acoes, text="📜 Histórico", font=("Arial", 9, "bold"),
-            bg="#f4f6f9", fg="#333", padx=8, pady=6
-        )
-        frame_historico.pack(side=tk.LEFT, padx=10)
+        # Botões em "outline" para ficarem visualmente mais discretos que
+        # os de exportação, já que são ações de consulta, não de gerar arquivo.
+        frame_historico = ttk.Labelframe(frame_acoes, text="📜  Histórico", padding=10, bootstyle="info")
+        frame_historico.pack(side=tk.LEFT, padx=(0, 10), fill=tk.Y)
  
-        btn_ver_banco = tk.Button(
+        btn_ver_banco = ttk.Button(
             frame_historico, text="📜 Carregar Histórico do Banco",
-            font=("Arial", 10), bg="#17a2b8", fg="white", padx=10, command=self.carregar_historico_banco
+            bootstyle="info-outline", command=self.carregar_historico_banco
         )
         btn_ver_banco.pack(side=tk.LEFT, padx=5)
  
-        btn_ver_exportacoes = tk.Button(
+        btn_ver_exportacoes = ttk.Button(
             frame_historico, text="🗂️ Ver Exportações",
-            font=("Arial", 10), bg="#20c997", fg="white", padx=10, command=self.ver_exportacoes
+            bootstyle="secondary-outline", command=self.ver_exportacoes
         )
         btn_ver_exportacoes.pack(side=tk.LEFT, padx=5)
  
-        btn_abrir_excel = tk.Button(
+        btn_abrir_excel = ttk.Button(
             frame_historico, text="📂 Abrir e Ler Planilha Excel",
-            font=("Arial", 10), bg="#ffc107", fg="#333", padx=10, command=self.abrir_arquivo_excel
+            bootstyle="warning-outline", command=self.abrir_arquivo_excel
         )
         btn_abrir_excel.pack(side=tk.LEFT, padx=5)
  
         # --- Grupo 2: Exportação (gerar novos arquivos) ---
-        frame_exportar = tk.LabelFrame(
-            frame_acoes, text="📤 Exportar Dados", font=("Arial", 9, "bold"),
-            bg="#f4f6f9", fg="#333", padx=8, pady=6
-        )
-        frame_exportar.pack(side=tk.LEFT, padx=10)
+        # Botões sólidos, mais chamativos: são a ação "positiva" de gerar algo novo.
+        frame_exportar = ttk.Labelframe(frame_acoes, text="📤  Exportar Dados", padding=10, bootstyle="success")
+        frame_exportar.pack(side=tk.LEFT, fill=tk.Y)
  
-        btn_exportar = tk.Button(
+        btn_exportar = ttk.Button(
             frame_exportar, text="📊 Exportar para Excel",
-            font=("Arial", 10, "bold"), bg="#007bff", fg="white", padx=10, command=self.exportar_excel
+            bootstyle="success", command=self.exportar_excel
         )
         btn_exportar.pack(side=tk.LEFT, padx=5)
  
-        btn_exportar_json = tk.Button(
+        btn_exportar_json = ttk.Button(
             frame_exportar, text="🧾 Exportar para JSON",
-            font=("Arial", 10, "bold"), bg="#6f42c1", fg="white", padx=10, command=self.exportar_json
+            bootstyle="dark", command=self.exportar_json
         )
         btn_exportar_json.pack(side=tk.LEFT, padx=5)
  
@@ -474,17 +482,17 @@ class AppAutomação:
             reverse=True  # mais recentes primeiro, já que o nome tem timestamp
         )
  
-        janela = tk.Toplevel(self.root)
+        janela = ttk.Toplevel(self.root)
         janela.title("Exportações Salvas")
-        janela.geometry("480x340")
-        janela.config(bg="#f4f6f9")
+        janela.geometry("480x360")
  
-        tk.Label(
+        ttk.Label(
             janela, text="Arquivos exportados nesta pasta:",
-            font=("Arial", 11, "bold"), bg="#f4f6f9"
-        ).pack(pady=8)
+            font=("Arial", 11, "bold"), padding=(10, 10, 10, 5)
+        ).pack(anchor="w")
  
-        lista = tk.Listbox(janela, font=("Arial", 10), width=58, height=12)
+        lista = tk.Listbox(janela, font=("Arial", 10), width=58, height=12,
+                            relief="flat", borderwidth=1, highlightthickness=1)
         lista.pack(padx=10, pady=5, fill=tk.BOTH, expand=True)
  
         if not arquivos:
@@ -502,13 +510,16 @@ class AppAutomação:
             self.carregar_arquivo(nome_arquivo)
             janela.destroy()
  
-        btn_carregar = tk.Button(
-            janela, text="📥 Carregar Selecionado", font=("Arial", 10, "bold"),
-            bg="#007bff", fg="white", padx=10, command=carregar_selecionado
+        btn_carregar = ttk.Button(
+            janela, text="📥 Carregar Selecionado", bootstyle="primary",
+            command=carregar_selecionado
         )
         btn_carregar.pack(pady=10)
  
 if __name__ == "__main__":
-    root = tk.Tk()
+    # themename="flatly": tema claro e moderno (estilo "flat").
+    # Outras opções bacanas do ttkbootstrap, se quiser trocar depois:
+    # "darkly" (escuro), "cosmo", "journal", "minty", "superhero" (escuro).
+    root = ttk.Window(themename="flatly")
     app = AppAutomação(root)
     root.mainloop()
