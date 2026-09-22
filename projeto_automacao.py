@@ -119,14 +119,22 @@ def executar_scraping(termo: str, limite: int = 10, callback_status=None):
         driver.get(f"https://lista.mercadolivre.com.br/{termo_url}")
         time.sleep(3)
  
-        # Rolagem suave para carregar os elementos
-        driver.execute_script("window.scrollTo(0, 600);")
-        time.sleep(2)
+        # Rola a página progressivamente até carregar produtos suficientes
+        # (o Mercado Livre carrega os itens aos poucos, conforme o usuário
+        # desce a página). Sem isso, pedidos de quantidades maiores (ex: 50,
+        # 100) ficariam limitados aos ~12 primeiros itens já visíveis.
+        cards = []
+        tentativas = 0
+        max_tentativas = 12  # trava de segurança para não rolar infinitamente
+        while len(cards) < limite and tentativas < max_tentativas:
+            driver.execute_script("window.scrollBy(0, 1200);")
+            time.sleep(1.2)
+            cards = driver.find_elements(
+                By.CSS_SELECTOR,
+                "li.ui-search-layout__item, div.poly-card, div.ui-search-result__content, .ui-search-result"
+            )
+            tentativas += 1
  
-        cards = driver.find_elements(
-            By.CSS_SELECTOR,
-            "li.ui-search-layout__item, div.poly-card, div.ui-search-result__content, .ui-search-result"
-        )
  
         if callback_status:
             callback_status(f"Lendo {len(cards)} itens e extraindo preços...")
@@ -217,6 +225,15 @@ class AppAutomação:
         # "<Return>" faz a busca disparar quando o usuário aperta Enter.
         self.ent_busca.bind("<Return>", lambda e: self.iniciar_busca_thread())
  
+        tk.Label(frame_busca, text="Qtd. produtos:", font=("Arial", 11), bg="#f4f6f9").pack(side=tk.LEFT, padx=(15, 5))
+ 
+        # Spinbox limitado entre 1 e 120 (o site pode retornar menos que
+        # o pedido, dependendo de quantos itens carregarem na página).
+        self.spin_quantidade = tk.Spinbox(frame_busca, from_=1, to=120, width=5, font=("Arial", 11))
+        self.spin_quantidade.delete(0, tk.END)
+        self.spin_quantidade.insert(0, "10")
+        self.spin_quantidade.pack(side=tk.LEFT, padx=5)
+ 
         self.btn_buscar = tk.Button(
             frame_busca, text="🔍 Nova Pesquisa", font=("Arial", 10, "bold"),
             bg="#28a745", fg="white", padx=10, command=self.iniciar_busca_thread
@@ -230,6 +247,8 @@ class AppAutomação:
         # Tabela (Treeview)
         frame_tabela = tk.Frame(self.root)
         frame_tabela.pack(fill=tk.BOTH, expand=True, padx=15, pady=5)
+        frame_tabela.grid_rowconfigure(0, weight=1)
+        frame_tabela.grid_columnconfigure(0, weight=1)
  
         colunas = ("Data/Hora", "Termo", "Produto", "Preço (R$)", "Link")
         self.tree = ttk.Treeview(frame_tabela, columns=colunas, show="headings", height=12)
@@ -243,51 +262,71 @@ class AppAutomação:
         self.tree.heading("Preço (R$)", text="Preço (R$)")
         self.tree.heading("Link", text="Link")
  
-        self.tree.column("Data/Hora", width=110, anchor="center")
-        self.tree.column("Termo", width=110)
-        self.tree.column("Produto", width=320)
-        self.tree.column("Preço (R$)", width=100, anchor="center")
-        self.tree.column("Link", width=260)
+        # stretch=False em todas as colunas: assim a tabela não espreme o
+        # link pra caber na tela, e a barra horizontal abaixo permite
+        # rolar e ver o link completo.
+        self.tree.column("Data/Hora", width=110, anchor="center", stretch=False)
+        self.tree.column("Termo", width=110, stretch=False)
+        self.tree.column("Produto", width=320, stretch=False)
+        self.tree.column("Preço (R$)", width=100, anchor="center", stretch=False)
+        self.tree.column("Link", width=420, stretch=False)
  
-        scrollbar = ttk.Scrollbar(frame_tabela, orient=tk.VERTICAL, command=self.tree.yview)
-        self.tree.configure(yscroll=scrollbar.set)
+        scrollbar_v = ttk.Scrollbar(frame_tabela, orient=tk.VERTICAL, command=self.tree.yview)
+        scrollbar_h = ttk.Scrollbar(frame_tabela, orient=tk.HORIZONTAL, command=self.tree.xview)
+        self.tree.configure(yscroll=scrollbar_v.set, xscroll=scrollbar_h.set)
  
-        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        scrollbar_v.grid(row=0, column=1, sticky="ns")
+        scrollbar_h.grid(row=1, column=0, sticky="ew")
  
-        # Painel Inferior de Ações e Histórico
+        # Painel Inferior de Ações: dois grupos separados visualmente,
+        # para deixar claro o que é "ver dados" e o que é "exportar dados".
         frame_acoes = tk.Frame(self.root, bg="#f4f6f9")
         frame_acoes.pack(pady=10)
  
+        # --- Grupo 1: Histórico (ver/carregar dados já existentes) ---
+        frame_historico = tk.LabelFrame(
+            frame_acoes, text="📜 Histórico", font=("Arial", 9, "bold"),
+            bg="#f4f6f9", fg="#333", padx=8, pady=6
+        )
+        frame_historico.pack(side=tk.LEFT, padx=10)
+ 
         btn_ver_banco = tk.Button(
-            frame_acoes, text="📜 Carregar Histórico do Banco",
+            frame_historico, text="📜 Carregar Histórico do Banco",
             font=("Arial", 10), bg="#17a2b8", fg="white", padx=10, command=self.carregar_historico_banco
         )
         btn_ver_banco.pack(side=tk.LEFT, padx=5)
  
+        btn_ver_exportacoes = tk.Button(
+            frame_historico, text="🗂️ Ver Exportações",
+            font=("Arial", 10), bg="#20c997", fg="white", padx=10, command=self.ver_exportacoes
+        )
+        btn_ver_exportacoes.pack(side=tk.LEFT, padx=5)
+ 
         btn_abrir_excel = tk.Button(
-            frame_acoes, text="📂 Abrir e Ler Planilha Excel",
+            frame_historico, text="📂 Abrir e Ler Planilha Excel",
             font=("Arial", 10), bg="#ffc107", fg="#333", padx=10, command=self.abrir_arquivo_excel
         )
         btn_abrir_excel.pack(side=tk.LEFT, padx=5)
  
+        # --- Grupo 2: Exportação (gerar novos arquivos) ---
+        frame_exportar = tk.LabelFrame(
+            frame_acoes, text="📤 Exportar Dados", font=("Arial", 9, "bold"),
+            bg="#f4f6f9", fg="#333", padx=8, pady=6
+        )
+        frame_exportar.pack(side=tk.LEFT, padx=10)
+ 
         btn_exportar = tk.Button(
-            frame_acoes, text="📊 Exportar para Excel",
+            frame_exportar, text="📊 Exportar para Excel",
             font=("Arial", 10, "bold"), bg="#007bff", fg="white", padx=10, command=self.exportar_excel
         )
         btn_exportar.pack(side=tk.LEFT, padx=5)
  
         btn_exportar_json = tk.Button(
-            frame_acoes, text="🧾 Exportar para JSON",
+            frame_exportar, text="🧾 Exportar para JSON",
             font=("Arial", 10, "bold"), bg="#6f42c1", fg="white", padx=10, command=self.exportar_json
         )
         btn_exportar_json.pack(side=tk.LEFT, padx=5)
- 
-        btn_ver_exportacoes = tk.Button(
-            frame_acoes, text="🗂️ Ver Exportações",
-            font=("Arial", 10), bg="#20c997", fg="white", padx=10, command=self.ver_exportacoes
-        )
-        btn_ver_exportacoes.pack(side=tk.LEFT, padx=5)
  
     def atualizar_status(self, mensagem: str):
         self.lbl_status.config(text=f"Status: {mensagem}")
@@ -303,12 +342,23 @@ class AppAutomação:
             messagebox.showwarning("Aviso", "Por favor, digite um produto para pesquisar.")
             return
  
-        self.btn_buscar.config(state=tk.DISABLED)
-        threading.Thread(target=self.rodar_automacao, args=(termo,), daemon=True).start()
- 
-    def rodar_automacao(self, termo: str):
+        # Valida a quantidade digitada no Spinbox (limite 1 a 120).
         try:
-            resultados = executar_scraping(termo, limite=10, callback_status=self.atualizar_status)
+            quantidade = int(self.spin_quantidade.get())
+        except ValueError:
+            messagebox.showwarning("Aviso", "A quantidade de produtos deve ser um número.")
+            return
+ 
+        if quantidade < 1 or quantidade > 120:
+            messagebox.showwarning("Aviso", "A quantidade de produtos deve estar entre 1 e 120.")
+            return
+ 
+        self.btn_buscar.config(state=tk.DISABLED)
+        threading.Thread(target=self.rodar_automacao, args=(termo, quantidade), daemon=True).start()
+ 
+    def rodar_automacao(self, termo: str, quantidade: int = 10):
+        try:
+            resultados = executar_scraping(termo, limite=quantidade, callback_status=self.atualizar_status)
  
             if resultados:
                 self.atualizar_status("Salvando no Banco SQLite...")
