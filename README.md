@@ -1,4 +1,4 @@
-# 🛍️ Monitor de Produtos - Mercado Livre (Desktop)
+ 🛍️ Monitor de Produtos - Mercado Livre (Desktop)
  
 Este é um aplicativo desktop completo para busca automatizada de produtos no **Mercado Livre**, desenvolvido em **Python** utilizando a biblioteca gráfica **Tkinter**. O sistema conta com automação web via **Selenium**, banco de dados local para persistência do histórico de buscas e exportação dos resultados em **Excel** e **JSON**.
  
@@ -13,6 +13,7 @@ Este é um aplicativo desktop completo para busca automatizada de produtos no **
 * **Pandas** (Manipulação dos dados e geração das planilhas)
 * **openpyxl** (Leitura e escrita de arquivos `.xlsx`)
 * **PyInstaller** (Empacotamento do sistema em executável `.exe`)
+ 
 ---
  
 ## 🚀 Funcionalidades do Sistema
@@ -26,6 +27,7 @@ Este é um aplicativo desktop completo para busca automatizada de produtos no **
 * **Visualizador de Exportações:** botão "Ver Exportações" lista todos os arquivos `.xlsx` e `.json` já exportados na pasta do projeto, permitindo carregar qualquer um deles de volta na tabela sem precisar navegar manualmente pelo explorador de arquivos.
 * **Leitura de Planilha Externa:** permite abrir e visualizar qualquer planilha `.xlsx` selecionada manualmente pelo usuário.
 * **Tratamento de Erros:** mensagens claras na interface em caso de falha na busca, no banco de dados ou na leitura de arquivos.
+ 
 ---
  
 ## 📂 Estrutura Completa de Caminhos e Arquivos
