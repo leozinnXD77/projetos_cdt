@@ -1,4 +1,4 @@
- ##🛍️ Monitor de Produtos - Mercado Livre (Desktop)
+ #🛍️ Monitor de Produtos - Mercado Livre (Desktop)
  
 Este é um aplicativo desktop completo para busca automatizada de produtos no **Mercado Livre**, desenvolvido em **Python** utilizando a biblioteca gráfica **Tkinter**. O sistema conta com automação web via **Selenium**, banco de dados local para persistência do histórico de buscas e exportação dos resultados em **Excel** e **JSON**.
  
