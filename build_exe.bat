@@ -26,7 +26,7 @@ REM pois usa o mesmo Python que acabou de instalar o pacote acima.
 REM --collect-all selenium e --collect-all ttkbootstrap: garantem que
 REM todos os submodulos e arquivos de tema/estilo dessas bibliotecas
 REM sejam incluidos no executavel (senao da erro de "No module named").
-python -m PyInstaller --onefile --windowed --collect-all selenium --collect-all ttkbootstrap --name AutomacaoPrecos projeto_automacao.py
+python -m PyInstaller --onefile --windowed --collect-all selenium --collect-all ttkbootstrap --name MonitorProdutos app_MonitorProdutos-version1.py
 if errorlevel 1 (
     echo.
     echo ERRO ao gerar o executavel. Veja a mensagem de erro acima
